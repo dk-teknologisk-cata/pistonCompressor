@@ -17,20 +17,20 @@ from findValveParameters import *
 P_filename = 'p_alpha_spilling.csv'
 
 # Geometry (taken from TDC)
-x_p_0 = 0.085+0.00851
-x_v_0 = 0.039
+x_p_0 = 0.09351
+x_v_0 = 0.05901
 x_op1 = 0.085
 x_op2 = 0.243
-H_p = 0.17051-0.00851
-H_v = 0.04 + 0.034*2 + 0.122 #H_p + 2*(x_p_0-x_v_0) #0.2945
+H_p = 0.162
+H_v = 0.23
 L_p = 0.092
-L_v = 0.034
-L_vb = 0.122
+L_v = 0.0335
+L_vb = 0.123
 L_op1 = 0.02
 L_op2 = 0.02
 D_p = 0.1025*2
 D_v = 0.04*2
-D_vi = 0.0315*2
+D_vi = 0.0285*2
 Alpha_upper_exp, Alpha_lower_exp, P_upper_exp, P_lower_exp = importPressure(P_filename)
 
 # Operating conditions
@@ -38,9 +38,14 @@ f = 50 # frequency (1/s)
 delta = math.pi*55/180
 t_0 = 0
 z_p_0 = x_p_0+(H_p-L_p)/2       # piston at mid
-z_v_0 = position(delta/(2*math.pi*f),f,delta,t_0,z_p_0,x_v_0+(H_v-L_vb-2*L_v)/2,H_p,H_v,L_p,L_v,L_vb)[1][0]
+z_v_t = x_v_0 + (H_v-2*L_v-L_vb)
+z_v_0 = 0.0954
+delta = findValveParameters(f,t_0,H_v,L_v,L_vb,z_v_t,z_v_0)
+delta_deg = math.degrees(delta)
+# z_v_0 = position(delta/(2*math.pi*f),f,delta,t_0,z_p_0,x_v_0+(H_v-L_vb-2*L_v)/2,H_p,H_v,L_p,L_v,L_vb)[1][0]
 
 # Find valve parameters
+'''
 T_input = numpy.array([0.0, 90.0, 180.0, 270.0])*math.pi/180/f
 Z_v_0_input = numpy.array([95.4, 90.5, 63.5, 65.8])/1000
 res0 = findValveParameters([x_v_0,H_v,delta],Z_v_0_input,T_input,f,t_0,z_p_0,H_p,L_p,L_v,L_vb)
@@ -50,7 +55,7 @@ x_v_0, H_v, delta = valve_param
 z_v_0 = findValveParameters(valve_param,Z_v_0_input,T_input,f,t_0,z_p_0,H_p,L_p,L_v,L_vb)[1]
 #print(valve_param)
 #print(findValveParameters(valve_param,Z_v_0_input,T_input,f,t_0,z_p_0,H_p,L_p,L_v,L_vb))
-
+'''
 # Calculations
 N = 200
 T = numpy.linspace(0,1/f,N)
@@ -92,7 +97,7 @@ ax[2].legend(('op_1','op_2'))
 fig1.suptitle('Motion of piston and valve and opening degree')
 plot.tight_layout()
 # Plot instantaneous position piston and valve 
-i = math.ceil(90/360*N)
+i = math.ceil(225/360*N)
 fig2 = plot.figure()
 plot.plot([0,D_p,D_p,0,0],[x_p_0,x_p_0,x_p_0+H_p,x_p_0+H_p,x_p_0],color='black')
 plot.plot([D_p,D_p+D_v,D_p+D_v,D_p,D_p],[x_v_0,x_v_0,x_v_0+H_v,x_v_0+H_v,x_v_0],color='black')
