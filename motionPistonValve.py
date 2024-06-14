@@ -37,10 +37,12 @@ Alpha_upper_exp, Alpha_lower_exp, P_upper_exp, P_lower_exp = importPressure(P_fi
 f = 50 # frequency (1/s)
 delta = math.pi*55/180
 t_0 = 0
-z_p_0 = x_p_0+(H_p-L_p)/2       # piston at mid
-z_v_t = x_v_0 + (H_v-2*L_v-L_vb)
+z_p_0 = x_p_0 + (H_p-L_p)/2       # piston at mid
+z_v_t = 0.0790 #x_v_0 + (H_v-2*L_v-L_vb)
 z_v_0 = 0.0954
 delta = findValveParameters(f,t_0,H_v,L_v,L_vb,z_v_t,z_v_0)
+#z_v_0 = x_v_0+(H_v-L_vb-2*L_v)/2
+z_v_0 = (H_v-L_vb-2*L_v)/2
 delta_deg = math.degrees(delta)
 # z_v_0 = position(delta/(2*math.pi*f),f,delta,t_0,z_p_0,x_v_0+(H_v-L_vb-2*L_v)/2,H_p,H_v,L_p,L_v,L_vb)[1][0]
 
