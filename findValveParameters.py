@@ -11,9 +11,7 @@ def findValveParameters(var,Z_v_0_input,T_input,f,t_0,z_p_0,H_p,L_p,L_v,L_vb):
     res = Z_v_0-Z_v_0_input
     return res, z_v_0
 '''
-def findValveParameters(f,t_0,H_v,L_v,L_vb,z_v_t,z_v_0):
+def findValveParameters(H_v,L_v,L_vb,x_v_0,z_v_0):
     import math
-    t = 1/(4*f)
-    A = 2*(z_v_t - z_v_0)/(H_v-2*L_v-L_vb)
-    delta = 2*math.pi*f*(t-t_0)-math.asin(A)
+    delta = -math.asin((x_v_0+(H_v-2*L_v-L_vb)/2-z_v_0)/((H_v-2*L_v-L_vb)/2))
     return delta 
