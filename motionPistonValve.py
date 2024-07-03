@@ -4,6 +4,7 @@ from scipy.optimize import fsolve
 import matplotlib.pyplot as plot
 from functionsPistonValve import *
 from findValveParameters import *
+from fluidProperties import *
 
 # All data are in meters 
 # x = geometry coordinate
@@ -15,6 +16,9 @@ from findValveParameters import *
 # _op2 = opening 2
 
 P_filename = 'p_alpha_spilling.csv'
+calcValveDelay = True
+calcTimestep = True
+calcAverageVelocity = True
 
 # Geometry (taken from TDC)
 x_p_0 = 0.09351
@@ -27,22 +31,37 @@ L_p = 0.092
 L_v = 0.0335
 L_vb = 0.123
 L_op1 = 0.02
+D_op1 = 0.055
 L_op2 = 0.02
+D_op2 = 0.055
 D_p = 0.1025*2
 D_v = 0.04*2
 D_vi = 0.0285*2
 Alpha_upper_exp, Alpha_lower_exp, P_upper_exp, P_lower_exp = importPressure(P_filename)
 
 # Operating conditions
-f = 50 # frequency (1/s)
-delta = math.pi*55/180
+fluidName = 'Water'
+EoS = 'HEOS'
+P_in = 2e5          # intake pressure (Pa)
+T_in = 120.5+273.15 # intake temperature (K)
+P_dis = 6e5         # discharge pressure (Pa)
+m = 1000/3600       # mass flow rate (kg/s)
+rotSpeed = 1500     # rotational speed (rpm)
+maxTranslation = 0.1*L_op1
+doubleEffect = True
+delta_deg = 55
+delta = math.radians(delta_deg)
 t_0 = 0
-z_p_0 = x_p_0 + (H_p-L_p)/2       # piston at mid
-z_v_0 = 0.0954
-delta = findValveParameters(H_v,L_v,L_vb,x_v_0,z_v_0)
-delta_deg = math.degrees(delta)
+z_v_0 = 0.0954  # initial position valve (to determine valve delay)
 
-# Calculations
+# Determine valve delay
+z_p_0 = x_p_0 + (H_p-L_p)/2       # piston at mid
+if calcValveDelay:
+    delta = findValveParameters(H_v,L_v,L_vb,x_v_0,z_v_0)
+    delta_deg = math.degrees(delta)
+
+# Determine piston-valve motion
+f = rotSpeed/60
 N = 200
 T = numpy.linspace(0,1/f,N)
 Alpha = T*360*f
@@ -50,9 +69,41 @@ Z_p = numpy.zeros((N,2))
 Z_v = numpy.zeros((N,4))
 OD_1 = numpy.zeros((N,1))
 OD_2 = numpy.zeros((N,1))
+OD_cyl_1 = numpy.zeros((N,1))
+OD_cyl_2 = numpy.zeros((N,1))
 for i,t in enumerate(T):
     Z_p[i,:], Z_v[i,:], = position(t,f,delta,t_0,z_p_0,x_v_0,H_p,H_v,L_p,L_v,L_vb)
-    OD_1[i], OD_2[i] = openings(Z_p[i,:],Z_v[i,:],x_op1,x_op2,L_op1,L_op2,x_p_0,H_p)
+    OD_1[i], OD_2[i] = openings(Z_p[i,:],Z_v[i,:],x_op1,x_op2,L_op1,L_op2,x_p_0,H_p)[0:2]
+    if calcAverageVelocity:
+        OD_cyl_1[i], OD_cyl_2[i] = openings(Z_p[i,:],Z_v[i,:],x_op1,x_op2,L_op1,L_op2,x_p_0,H_p)[2:4]
+
+
+# Determine max timestep for max position change
+if calcTimestep:
+    v_p_max, v_v_max = velocity(0,f,delta,t_0,H_p,H_v,L_p,L_v,L_vb)[4:6]
+    dt_max = min(maxTranslation/v_p_max,maxTranslation/v_v_max)
+    print('Max timestep (s): ', dt_max)
+
+# Determine average velocities
+if calcAverageVelocity:
+    M_cycle = m/f/2
+    A_eff_op1 = OD_cyl_1*(2*D_op1)*L_op1
+    A_eff_op2 = OD_cyl_2*(2*D_op2)*L_op2
+    rho_in, rho_dis = fluidProperties(fluidName,EoS,P_in,T_in,P_dis)
+    V_avg_in_op1 = M_cycle/(rho_in*sum(A_eff_op1)*(1/f)/N)
+    V_avg_dis_op1 = M_cycle/(rho_dis*sum(A_eff_op1)*(1/f)/N)
+    V_avg_in_op2 = M_cycle/(rho_in*sum(A_eff_op1)*(1/f)/N)
+    V_avg_dis_op2 = M_cycle/(rho_dis*sum(A_eff_op1)*(1/f)/N)
+    A_cyl_op1 = D_p*(Z_p[:,0]-x_p_0)
+    A_cyl_op2 = D_p*(x_p_0+H_p-Z_p[:,1])
+    V_avg_cyl_in_op1 = V_avg_in_op1*A_eff_op1/A_cyl_op1
+    V_avg_cyl_in_op2 = V_avg_in_op2*A_eff_op2/A_cyl_op2
+    V_avg_cyl_dis_op1 = V_avg_dis_op1*A_eff_op1/A_cyl_op1
+    V_avg_cyl_dis_op2 = V_avg_dis_op2*A_eff_op2/A_cyl_op2
+    fig0 = plot.figure()
+    plot.plot(Alpha,V_avg_cyl_in_op1,color='blue')
+    plot.plot(Alpha,V_avg_cyl_dis_op1,color='red')
+    plot.show()
 
 # Plot motion of piston and valve and opening degree
 fig1, ax1 = plot.subplots(1,3,figsize=(10,4),layout='constrained')
