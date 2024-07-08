@@ -53,12 +53,14 @@ delta_deg = 55
 delta = math.radians(delta_deg)
 t_0 = 0
 z_v_0 = 0.0954  # initial position valve (to determine valve delay)
+alpha_deg = 90    # position to show
 
 # Determine valve delay
 z_p_0 = x_p_0 + (H_p-L_p)/2       # piston at mid
 if calcValveDelay:
     delta = findValveParameters(H_v,L_v,L_vb,x_v_0,z_v_0)
     delta_deg = math.degrees(delta)
+    print('Calculated valve delay: ',delta_deg)
 
 # Determine piston-valve motion
 f = rotSpeed/60
@@ -67,10 +69,10 @@ T = numpy.linspace(0,1/f,N)
 Alpha = T*360*f
 Z_p = numpy.zeros((N,2))
 Z_v = numpy.zeros((N,4))
-OD_1 = numpy.zeros((N,1))
-OD_2 = numpy.zeros((N,1))
-OD_cyl_1 = numpy.zeros((N,1))
-OD_cyl_2 = numpy.zeros((N,1))
+OD_1 = numpy.zeros((N,))
+OD_2 = numpy.zeros((N,))
+OD_cyl_1 = numpy.zeros((N,))
+OD_cyl_2 = numpy.zeros((N,))
 for i,t in enumerate(T):
     Z_p[i,:], Z_v[i,:], = position(t,f,delta,t_0,z_p_0,x_v_0,H_p,H_v,L_p,L_v,L_vb)
     OD_1[i], OD_2[i] = openings(Z_p[i,:],Z_v[i,:],x_op1,x_op2,L_op1,L_op2,x_p_0,H_p)[0:2]
@@ -89,21 +91,25 @@ if calcAverageVelocity:
     M_cycle = m/f/2
     A_eff_op1 = OD_cyl_1*(2*D_op1)*L_op1
     A_eff_op2 = OD_cyl_2*(2*D_op2)*L_op2
-    rho_in, rho_dis = fluidProperties(fluidName,EoS,P_in,T_in,P_dis)
+    rho_in, rho_dis, T_cyl_dis = fluidProperties(fluidName,EoS,P_in,T_in,P_dis)
     V_avg_in_op1 = M_cycle/(rho_in*sum(A_eff_op1)*(1/f)/N)
     V_avg_dis_op1 = M_cycle/(rho_dis*sum(A_eff_op1)*(1/f)/N)
     V_avg_in_op2 = M_cycle/(rho_in*sum(A_eff_op1)*(1/f)/N)
     V_avg_dis_op2 = M_cycle/(rho_dis*sum(A_eff_op1)*(1/f)/N)
     A_cyl_op1 = D_p*(Z_p[:,0]-x_p_0)
     A_cyl_op2 = D_p*(x_p_0+H_p-Z_p[:,1])
-    V_avg_cyl_in_op1 = V_avg_in_op1*A_eff_op1/A_cyl_op1
-    V_avg_cyl_in_op2 = V_avg_in_op2*A_eff_op2/A_cyl_op2
-    V_avg_cyl_dis_op1 = V_avg_dis_op1*A_eff_op1/A_cyl_op1
-    V_avg_cyl_dis_op2 = V_avg_dis_op2*A_eff_op2/A_cyl_op2
+    V_cyl_in_op1 = V_avg_in_op1*A_eff_op1/A_cyl_op1
+    V_cyl_in_op2 = V_avg_in_op2*A_eff_op2/A_cyl_op2
+    V_cyl_dis_op1 = V_avg_dis_op1*A_eff_op1/A_cyl_op1
+    V_cyl_dis_op2 = V_avg_dis_op2*A_eff_op2/A_cyl_op2
     fig0 = plot.figure()
-    plot.plot(Alpha,V_avg_cyl_in_op1,color='blue')
-    plot.plot(Alpha,V_avg_cyl_dis_op1,color='red')
-    plot.show()
+    plot.plot(Alpha,V_cyl_in_op1,color='blue')
+    plot.plot(Alpha,V_cyl_dis_op1,color='red')
+    i = math.ceil(alpha_deg/360*N)
+    print('V_cyl_in_op1 = ', V_cyl_in_op1[i], 'at alpha_deg = ', alpha_deg)
+    print('V_cyl_dis_op1 = ', V_cyl_dis_op1[i], 'at alpha_deg = ', alpha_deg)
+    print('V_cyl_in_op2 = ', V_cyl_in_op2[i], 'at alpha_deg = ', alpha_deg)
+    print('V_cyl_dis_op2 = ', V_cyl_dis_op2[i], 'at alpha_deg = ', alpha_deg)
 
 # Plot motion of piston and valve and opening degree
 fig1, ax1 = plot.subplots(1,3,figsize=(10,4),layout='constrained')
@@ -156,10 +162,11 @@ plot.plot([Alpha[0],Alpha[-1]],[x_op2, x_op2],color='black')
 plot.plot([Alpha[0],Alpha[-1]],[x_op2+L_op2, x_op2+L_op2],color='black')
 plot.fill_between([Alpha[0],Alpha[-1]],[x_op2, x_op2],[x_op2+L_op2, x_op2+L_op2],color='black',alpha=0.5)
 plot.xlabel('Crank angle (°)')
+plot.ylabel('Axial coordinate (m)')
 plot.title('Opening degree of cylinder - valve orifices')
 
 # Plot instantaneous position piston and valve
-i = math.ceil(325/360*N)
+i = math.ceil(alpha_deg/360*N)
 fig3 = plot.figure()
 plot.plot([0,D_p,D_p,0,0],[x_p_0,x_p_0,x_p_0+H_p,x_p_0+H_p,x_p_0],color='black')
 plot.plot([D_p,D_p+D_v,D_p+D_v,D_p,D_p],[x_v_0,x_v_0,x_v_0+H_v,x_v_0+H_v,x_v_0],color='black')
@@ -176,8 +183,7 @@ plot.plot([D_p,D_p+D_v,D_p+D_v,D_p+D_vi,D_p+D_vi,D_p+D_v,D_p+D_v,D_p,D_p,D_p+D_v
 plot.fill_betweenx([Z_v[i,0],Z_v[i,1],Z_v[i,1],Z_v[i,2],Z_v[i,2],Z_v[i,3]],\
                    [D_p,D_p,D_p+D_v-D_vi,D_p+D_v-D_vi,D_p,D_p],\
                     [D_p+D_v,D_p+D_v,D_p+D_vi,D_p+D_vi,D_p+D_v,D_p+D_v],color='red',alpha=0.5)
-#plot.title('Position of piston and valve at t = %.4f ms' % T[i])
-plot.title('Position of piston and valve at alpha = %.4f °' % Alpha[i])
+plot.title('Position of piston and valve at alpha = %.2f °' % Alpha[i])
 ax3 = plot.gca()
 ax3.set_xticks([])
 ax3.set_yticks([])
@@ -211,6 +217,16 @@ ax5_11.set_ylabel('Pressure (bar)',color='red')
 ax5_11.tick_params(axis='y',labelcolor='red')
 fig5.suptitle('Opening degree and pressure in the cylinder')
 plot.tight_layout()
+
+fig6 = plot.figure()
+plot.plot(Alpha,OD_1*100,color='green')
+plot.plot(Alpha,OD_2*100,color='purple')
+plot.plot([Alpha[0],Alpha[-1]],[0,0],color='black')
+plot.plot([Alpha[0],Alpha[-1]],[100,100],color='black')
+plot.xlabel('Crank angle (°)')
+plot.ylabel('Opening degree (%)')
+plot.legend(('lower chamber','upper chamber'),loc=(0.6, 0.8))
+plot.title('Opening degree of cylinder - valve orifices')
 
 plot.show()
 print('OK')

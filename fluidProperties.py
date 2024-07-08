@@ -33,7 +33,7 @@ def fluidProperties(fluidName,EoS,P_inlet,T_inlet,P_outlet):
     T_cyl_intake = fluid.T()
     fluid.update(CoolProp.PSmass_INPUTS,P_cyl_discharge,s_outlet)
     T_cyl_discharge = fluid.T()
-    return rho_inlet, rho_outlet
+    return rho_inlet, rho_outlet, T_cyl_discharge
     '''
     print('Inlet: P = ',P_inlet,' (Pa); ','T = ',T_inlet, '(K)')
     print('Cylinder intake: P = ',P_cyl_intake,' (Pa); ','T = ',T_cyl_intake, '(K)')
