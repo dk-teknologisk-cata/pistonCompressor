@@ -45,7 +45,7 @@ EoS = 'HEOS'
 P_in = 2e5          # intake pressure (Pa)
 T_in = 120.5+273.15 # intake temperature (K)
 P_dis = 6e5         # discharge pressure (Pa)
-m = 1000/3600       # mass flow rate (kg/s)
+m = 250/3600       # mass flow rate (kg/s)
 rotSpeed = 1500     # rotational speed (rpm)
 maxTranslation = 0.1*L_op1
 doubleEffect = True
@@ -53,7 +53,7 @@ delta_deg = 55
 delta = math.radians(delta_deg)
 t_0 = 0
 z_v_0 = 0.0954  # initial position valve (to determine valve delay)
-alpha_deg = 90    # position to show
+alpha_deg = 0    # position to show
 
 # Determine valve delay
 z_p_0 = x_p_0 + (H_p-L_p)/2       # piston at mid
@@ -102,14 +102,28 @@ if calcAverageVelocity:
     V_cyl_in_op2 = V_avg_in_op2*A_eff_op2/A_cyl_op2
     V_cyl_dis_op1 = V_avg_dis_op1*A_eff_op1/A_cyl_op1
     V_cyl_dis_op2 = V_avg_dis_op2*A_eff_op2/A_cyl_op2
-    fig0 = plot.figure()
-    plot.plot(Alpha,V_cyl_in_op1,color='blue')
-    plot.plot(Alpha,V_cyl_dis_op1,color='red')
+    fig0, ax0 = plot.subplots(1,2,figsize=(8,4),layout='constrained')
+    ax0[0].plot(Alpha,V_cyl_in_op1,color='blue')
+    ax0[0].plot(Alpha,V_cyl_dis_op1,color='red')
+    ax0[0].set_ylim(0, max(V_cyl_in_op1[i],V_cyl_dis_op1[i],V_cyl_in_op2[i],V_cyl_dis_op2[i])*2)
+    ax0[0].set_title('Upper chamber')
+    ax0[0].set_xlabel('Crank angle (°)')
+    ax0[0].set_ylabel('Velocity (m/s)')
+    ax0[0].legend(('V_in','V_dis'))
+    ax0[1].plot(Alpha,V_cyl_in_op2,color='blue')
+    ax0[1].plot(Alpha,V_cyl_dis_op2,color='red')
+    ax0[1].set_ylim(0, max(V_cyl_in_op2[i],V_cyl_dis_op2[i],V_cyl_in_op1[i],V_cyl_dis_op1[i])*2)
+    ax0[1].set_title('Lower chamber')
+    ax0[1].set_xlabel('Crank angle (°)')
+    ax0[1].set_ylabel('Velocity (m/s)')
+    ax0[1].legend(('V_in','V_dis'))
     i = math.ceil(alpha_deg/360*N)
     print('V_cyl_in_op1 = ', V_cyl_in_op1[i], 'at alpha_deg = ', alpha_deg)
     print('V_cyl_dis_op1 = ', V_cyl_dis_op1[i], 'at alpha_deg = ', alpha_deg)
     print('V_cyl_in_op2 = ', V_cyl_in_op2[i], 'at alpha_deg = ', alpha_deg)
     print('V_cyl_dis_op2 = ', V_cyl_dis_op2[i], 'at alpha_deg = ', alpha_deg)
+    
+
 
 # Plot motion of piston and valve and opening degree
 fig1, ax1 = plot.subplots(1,3,figsize=(10,4),layout='constrained')
