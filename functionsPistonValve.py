@@ -1,6 +1,14 @@
 def position(t,f,delta,t_0,z_p_0,x_v_0,H_p,H_v,L_p,L_v,L_vb):
     import math
     z_p = (H_p-L_p)/2*(math.sin(2*math.pi*f*(t-t_0))) + z_p_0
+    z_v = (H_v-2*L_v-L_vb)/2*(math.sin(2*math.pi*f*(t-t_0)-delta)) + x_v_0 + (H_v-2*L_v-L_vb)/2
+    Z_p = [z_p, z_p + L_p]
+    Z_v = [z_v, z_v + L_v, z_v + L_v + L_vb, z_v + 2*L_v + L_vb]
+    return Z_p, Z_v
+
+def position_orig(t,f,delta,t_0,z_p_0,x_v_0,H_p,H_v,L_p,L_v,L_vb):
+    import math
+    z_p = (H_p-L_p)/2*(math.sin(2*math.pi*f*(t-t_0))) + z_p_0
     z_v = (H_v-2*L_v-L_vb)/2*(math.sin(2*math.pi*(f+delta)*(t-t_0)-delta)) + x_v_0 + (H_v-2*L_v-L_vb)/2
     Z_p = [z_p, z_p + L_p]
     Z_v = [z_v, z_v + L_v, z_v + L_v + L_vb, z_v + 2*L_v + L_vb]

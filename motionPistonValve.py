@@ -1,5 +1,6 @@
 import math
 import numpy
+from tabulate import tabulate
 from scipy.optimize import fsolve
 import matplotlib.pyplot as plot
 from functionsPistonValve import *
@@ -78,7 +79,11 @@ for i,t in enumerate(T):
     OD_1[i], OD_2[i] = openings(Z_p[i,:],Z_v[i,:],x_op1,x_op2,L_op1,L_op2,x_p_0,H_p)[0:2]
     if calcAverageVelocity:
         OD_cyl_1[i], OD_cyl_2[i] = openings(Z_p[i,:],Z_v[i,:],x_op1,x_op2,L_op1,L_op2,x_p_0,H_p)[2:4]
-
+posData = [['Piston BDC:']+list(Z_p[math.ceil(270/360*N),:])+list(Z_v[math.ceil(270/360*N),:]),
+           ['Piston middle moving to TDC:']+list(Z_p[math.ceil(0/360*N),:])+list(Z_v[math.ceil(0/360*N),:]),
+           ['Piston TDC:']+list(Z_p[math.ceil(90/360*N),:])+list(Z_v[math.ceil(90/360*N),:]),
+           ['Piston middle moving to BDC:']+list(Z_p[math.ceil(180/360*N),:])+list(Z_v[math.ceil(180/360*N),:])]
+print(tabulate(posData,tablefmt="grid",floatfmt=".4f"))
 
 # Determine max timestep for max position change
 if calcTimestep:
