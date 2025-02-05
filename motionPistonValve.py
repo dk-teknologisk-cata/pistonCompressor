@@ -54,7 +54,11 @@ delta_deg = 55
 delta = math.radians(delta_deg)
 t_0 = 0
 z_v_0 = 0.0954  # initial position valve (to determine valve delay)
-alpha_deg = 0    # position to show
+alpha_deg = 180    # position to show
+
+# Points for evaluation of average velocity
+if calcAverageVelocity:
+    crankAngles = [35, 70, 90, 155, 167, 215, 222, 240]
 
 # Determine valve delay
 z_p_0 = x_p_0 + (H_p-L_p)/2       # piston at mid
@@ -94,41 +98,52 @@ if calcTimestep:
 # Determine average velocities
 if calcAverageVelocity:
     M_cycle = m/f/2
+    rho_in, rho_dis, T_cyl_dis = fluidProperties(fluidName,EoS,P_in,T_in,P_dis)
+    A_cyl_op1 = D_p*(Z_p[:,0]-x_p_0)
+    A_cyl_op2 = D_p*(x_p_0+H_p-Z_p[:,1])
     A_eff_op1 = OD_cyl_1*(2*D_op1)*L_op1
     A_eff_op2 = OD_cyl_2*(2*D_op2)*L_op2
-    rho_in, rho_dis, T_cyl_dis = fluidProperties(fluidName,EoS,P_in,T_in,P_dis)
     V_avg_in_op1 = M_cycle/(rho_in*sum(A_eff_op1)*(1/f)/N)
     V_avg_dis_op1 = M_cycle/(rho_dis*sum(A_eff_op1)*(1/f)/N)
     V_avg_in_op2 = M_cycle/(rho_in*sum(A_eff_op1)*(1/f)/N)
     V_avg_dis_op2 = M_cycle/(rho_dis*sum(A_eff_op1)*(1/f)/N)
-    A_cyl_op1 = D_p*(Z_p[:,0]-x_p_0)
-    A_cyl_op2 = D_p*(x_p_0+H_p-Z_p[:,1])
     V_cyl_in_op1 = V_avg_in_op1*A_eff_op1/A_cyl_op1
     V_cyl_in_op2 = V_avg_in_op2*A_eff_op2/A_cyl_op2
     V_cyl_dis_op1 = V_avg_dis_op1*A_eff_op1/A_cyl_op1
     V_cyl_dis_op2 = V_avg_dis_op2*A_eff_op2/A_cyl_op2
+    '''
+    V_cyl_in_op1 = M_cycle/2*numpy.sign(OD_cyl_1)/(rho_in*A_cyl_op1)
+    V_cyl_in_op2 = M_cycle/2*numpy.sign(OD_cyl_2)/(rho_in*A_cyl_op2)
+    V_cyl_dis_op1 = M_cycle/2*numpy.sign(OD_cyl_1)/(rho_dis*A_cyl_op1)
+    V_cyl_dis_op2 = M_cycle/2*numpy.sign(OD_cyl_2)/(rho_dis*A_cyl_op2)
+    '''
     fig0, ax0 = plot.subplots(1,2,figsize=(8,4),layout='constrained')
     ax0[0].plot(Alpha,V_cyl_in_op1,color='blue')
     ax0[0].plot(Alpha,V_cyl_dis_op1,color='red')
     ax0[0].set_ylim(0, max(V_cyl_in_op1[i],V_cyl_dis_op1[i],V_cyl_in_op2[i],V_cyl_dis_op2[i])*2)
-    ax0[0].set_title('Upper chamber')
+    ax0[0].set_title('Lower chamber')
     ax0[0].set_xlabel('Crank angle (°)')
     ax0[0].set_ylabel('Velocity (m/s)')
     ax0[0].legend(('V_in','V_dis'))
     ax0[1].plot(Alpha,V_cyl_in_op2,color='blue')
     ax0[1].plot(Alpha,V_cyl_dis_op2,color='red')
     ax0[1].set_ylim(0, max(V_cyl_in_op2[i],V_cyl_dis_op2[i],V_cyl_in_op1[i],V_cyl_dis_op1[i])*2)
-    ax0[1].set_title('Lower chamber')
+    ax0[1].set_title('Upper chamber')
     ax0[1].set_xlabel('Crank angle (°)')
     ax0[1].set_ylabel('Velocity (m/s)')
     ax0[1].legend(('V_in','V_dis'))
-    i = math.ceil(alpha_deg/360*N)
-    print('V_cyl_in_op1 = ', V_cyl_in_op1[i], 'at alpha_deg = ', alpha_deg)
-    print('V_cyl_dis_op1 = ', V_cyl_dis_op1[i], 'at alpha_deg = ', alpha_deg)
-    print('V_cyl_in_op2 = ', V_cyl_in_op2[i], 'at alpha_deg = ', alpha_deg)
-    print('V_cyl_dis_op2 = ', V_cyl_dis_op2[i], 'at alpha_deg = ', alpha_deg)
-    
-
+    crankAngles = numpy.array(crankAngles)
+    i_crankAngles = numpy.ceil(crankAngles*N/360).astype(int)
+    V_cyl_in_op1_sim = V_cyl_in_op1[i_crankAngles]
+    V_cyl_in_op2_sim = V_cyl_in_op2[i_crankAngles]
+    V_cyl_dis_op2_sim = V_cyl_dis_op2[i_crankAngles]
+    V_cyl_dis_op1_sim = V_cyl_dis_op1[i_crankAngles]
+    vData = [['Crank angle (°)']+list(crankAngles),
+            ['Inlet velocity lower chamber']+list(V_cyl_dis_op1_sim),
+            #['Inlet velocity upper chamber']+list(V_cyl_dis_op2_sim),
+            ['Outlet velocity lower chamber']+list(V_cyl_in_op1_sim),
+            ['Outlet velocity upper chamber']+list(V_cyl_in_op2_sim)]
+    print(tabulate(vData,tablefmt="grid",floatfmt=".2f"))
 
 # Plot motion of piston and valve and opening degree
 fig1, ax1 = plot.subplots(1,3,figsize=(10,4),layout='constrained')
@@ -221,6 +236,7 @@ fig5, ax5 = plot.subplots(1,2,figsize=(8,4),layout='constrained')
 ax5[0].plot(Alpha,OD_1,color='green',marker='o',markersize=2)
 ax5[0].set_xlabel('Crank angle (°)')
 ax5[0].set_ylabel('Opening degree (-)',color='green')
+ax5[0].set_title('Lower chamber')
 ax5[0].tick_params(axis='y',labelcolor='green')
 ax5_01 = ax5[0].twinx()
 ax5_01.plot(Alpha_lower_exp,P_lower_exp,color='blue')
@@ -229,6 +245,7 @@ ax5_01.tick_params(axis='y',labelcolor='blue')
 ax5[1].plot(Alpha,OD_2,color='purple',marker='o',markersize=2)
 ax5[1].set_xlabel('Crank angle (°)')
 ax5[1].set_ylabel('Opening degree (-)',color='purple')
+ax5[1].set_title('Upper chamber')
 ax5[1].tick_params(axis='y',labelcolor='purple')
 ax5_11 = ax5[1].twinx()
 ax5_11.plot(Alpha_upper_exp,P_upper_exp,color='red')
